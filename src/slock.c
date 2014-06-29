@@ -1,6 +1,8 @@
-
 /* See LICENSE file for license details. */
+
+
 #define _XOPEN_SOURCE 500
+
 #if HAVE_SHADOW_H
 #include <shadow.h>
 #endif
@@ -22,6 +24,7 @@
 #include <login_cap.h>
 #include <bsd_auth.h>
 #endif
+
 
 typedef struct {
 	int screen;
