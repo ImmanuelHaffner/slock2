@@ -8,8 +8,8 @@
 template < class T >
 T * notnull( T *v )
 {
-	assert( v && "v must not be NULL" );
-	return v;
+  assert( v && "v must not be NULL" );
+  return v;
 }
 
 inline bool streq( char const * const s0, char const * const s1 )

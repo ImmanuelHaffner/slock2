@@ -5,9 +5,12 @@
 #include <cstdlib>
 #include <err.h>        // errx()
 #include <errno.h>      // number of errors
-#include <unistd.h>     // write()
 #include <iostream>
+
+#include <unistd.h>     // write(), getuid()
+#include <pwd.h>
 #include <X11/Xlib.h>   // XOpenDisplay()
+
 #include "argparser.h"
 #include "logger.h"
 
@@ -28,12 +31,12 @@ char const *logfile   = LOGFILE;
  *
  * Needs root privileges.
  */
-static void dontkillme( void )
+static void disableOOMKiller( void )
 {
 #define OOM "/proc/self/oom_score_adj"
-	int fd = open( OOM, O_WRONLY );
+  int fd = open( OOM, O_WRONLY );
 
-	if ( -1 == fd )
+  if ( -1 == fd )
   {
     /* If the file does not exist, return. */
     if ( ENOENT == errno )
@@ -52,13 +55,13 @@ static void dontkillme( void )
   /* If the file could not be opened for write-only, or the file could not be
    * written, or the file could not be closed, exit with failure.
    */
-	if ( write( fd, "-1000\n", 6 ) != 6 )
-		errx( EXIT_FAILURE,
+  if ( write( fd, "-1000\n", 6 ) != 6 )
+    errx( EXIT_FAILURE,
         "cannot disable the out-of-memory killer for this process: "
         "could not write to " OOM );
 
-	if ( close( fd ) )
-		errx( EXIT_FAILURE,
+  if ( close( fd ) )
+    errx( EXIT_FAILURE,
         "cannot disable the out-of-memory killer for this process: "
         "could not close " OOM );
 }
@@ -74,11 +77,20 @@ int main( int, char **argv )
 
 #ifdef __linux__
   /* Disable the Out-of-memory killer for this process. */
-	dontkillme();
+  disableOOMKiller();
 #endif
 
-	if ( ! XOpenDisplay( 0 ) )
-		errx( EXIT_FAILURE, "cannot open display" );
 
-	exit( EXIT_SUCCESS );
+  /* Verify that the user has a password set. */
+  uid_t UID = getuid();
+  if ( ! getpwuid( UID ) )
+  {
+    Logger::get()->log( Logger::ERROR, "no password entry for UID ", UID );
+    exit( EXIT_FAILURE );
+  }
+
+  if ( ! XOpenDisplay( 0 ) )
+    errx( EXIT_FAILURE, "cannot open display" );
+
+  exit( EXIT_SUCCESS );
 }

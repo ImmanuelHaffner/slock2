@@ -13,8 +13,8 @@ void usage()
     "slock\n"
     "  -h  --help             - prints this message\n"
     "  -v  --verbose          - make slock verbose\n"
-		"  -l  --logfile <FILE>		- sets the log file\n"
-		;
+    "  -l  --logfile <FILE>    - sets the log file\n"
+    ;
   std::cout.flush();
 }
 
@@ -32,15 +32,15 @@ void parseArguments( char **argv )
     {
       verbose = true;
     }
-		else if ( streq( arg, "-l" ) || streq( arg, "--logfile" ) )
-		{
-			logfile = *(++argv);
-			if ( ! logfile )
-			{
-				usage();
-				errx( EXIT_FAILURE, "no logfile specified\n" );
-			}
-		}
+    else if ( streq( arg, "-l" ) || streq( arg, "--logfile" ) )
+    {
+      logfile = *(++argv);
+      if ( ! logfile )
+      {
+        usage();
+        errx( EXIT_FAILURE, "no logfile specified\n" );
+      }
+    }
     else
     {
       /* Unknown argument. */
