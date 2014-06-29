@@ -1,16 +1,11 @@
 #include "argparser.h"
 
-#include <cstring>
 #include <cstddef>
 #include <cstdlib>
 #include <err.h>
 #include <iostream>
+#include "util.h"
 
-
-inline bool streq( char const * const s0, char const * const s1 )
-{
-  return strcmp( s0, s1 ) == 0;
-}
 
 void usage()
 {
