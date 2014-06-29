@@ -11,15 +11,14 @@ NAME				?= slock
 VERSION			?= 1.2
 SRCDIR			?= src
 DOCSDIR			?= doc
-LLVM_CONFIG ?= llvm-config
 
 Q						?= @
 
 BINDIR			:= $(BUILDDIR)/$(CFG)
 BIN					:= $(BINDIR)/$(NAME)
 PWD					:= $(shell pwd)
-SRC					:= $(sort $(subst $(PWD), ".", $(shell find $(SRCDIR)/ -name '*.c')))
-OBJ					:= $(SRC:$(SRCDIR)/%.c=$(BINDIR)/%.o)
+SRC					:= $(sort $(subst $(PWD), ".", $(shell find $(SRCDIR)/ -name '*.cc')))
+OBJ					:= $(SRC:$(SRCDIR)/%.cc=$(BINDIR)/%.o)
 DEP					:= $(OBJ:%.o=%.d)
 
 DUMMY				:= $(shell mkdir -p $(sort $(dir $(OBJ))))
@@ -37,7 +36,7 @@ all: $(BIN)
 ifeq ($(DEBUG), 1)
 	CFLAGS	+= -g -DDEBUG
 else
-	CFLAGS	?= -O2 -DNDEBUG
+	CFLAGS	+= -O2 -DNDEBUG
 endif
 
 ifeq ($(VERBOSE), 1)
@@ -54,22 +53,24 @@ X11_LDFLAGS := -L${X11_PATH} -lX11 -lXext
 
 # flags
 # On *BSD remove -DHAVE_SHADOW_H from CPPFLAGS and add -DHAVE_BSD_AUTH
-COLOR1 	?= black			# normal
-COLOR2 	?= \#005577		# typing
-DEFS 		= -DVERSION=\"${VERSION}\" -DHAVE_SHADOW_H -DCOLOR1="\"${COLOR1}\"" -DCOLOR2="\"${COLOR2}\""
+COLOR1 	?= \"black\"			# normal
+COLOR2 	?= \"\#005577\"		# typing
+DEFS 		 = -DVERSION=\"${VERSION}\" -DHAVE_SHADOW_H -DCOLOR1=${COLOR1} \
+					 -DCOLOR2=${COLOR2}
 
-CFLAGS			+= ${X11_CFLAGS} ${DEFS} -std=c99 -Wall -W -pedantic
+CFLAGS			+= ${X11_CFLAGS} ${DEFS} -Wall -W -pedantic
+CXXFLAGS		+= ${CFLAGS} -std=c++11
 # On OpenBSD and Darwin remove -lcrypt
 LDFLAGS			+= ${X11_LDFLAGS} -L/usr/lib -lc -lcrypt
 
 
 $(BIN): $(OBJ)
 	@echo "===> LD $@"
-	$(Q)$(CC) $(CFLAGS) -o $(BIN) $^ $(LDFLAGS)
+	$(Q)$(CXX) $(CXXFLAGS) -o $(BIN) $^ $(LDFLAGS)
 
-$(BINDIR)/%.o: $(SRCDIR)/%.c
-	@echo "===> $(CC) $<   ->   $@"
-	$(Q)$(CC) $(CFLAGS) -MMD -c -o $@ $<
+$(BINDIR)/%.o: $(SRCDIR)/%.cc
+	@echo "===> $(CXX) $<   ->   $@"
+	$(Q)$(CXX) $(CXXFLAGS) -MMD -c -o $@ $<
 
 doxy:
 	@echo "===> DOXYGEN"
