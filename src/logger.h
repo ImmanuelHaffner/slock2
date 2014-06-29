@@ -17,6 +17,7 @@ struct Logger
 {
   enum LogLevel
   {
+    DEBUG,
     VERBOSE,
     NORMAL,
     WARNING,
@@ -76,6 +77,10 @@ struct Logger
 
         case WARNING:
           fprintf( f, "WARNING: " );
+          break;
+
+        case DEBUG:
+          fprintf( f, "DEBUG: " );
           break;
 
         case VERBOSE:
