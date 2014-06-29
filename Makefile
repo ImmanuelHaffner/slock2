@@ -89,3 +89,10 @@ cleanall: clean
 # On others MODE=4755 and GROUP=root
 #MODE=2755
 #GROUP=auth
+
+install: unsupported
+
+uninstall: unsupported
+
+unsupported:
+	@echo "Not yet implemented."
