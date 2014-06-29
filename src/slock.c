@@ -48,7 +48,7 @@ die(const char *errstr, ...) {
 #include <fcntl.h>
 
 static void
-dontkillme(void) {
+dontkillme(void) { /* needs root privileges */
 	int fd;
 
 	fd = open("/proc/self/oom_score_adj", O_WRONLY);
