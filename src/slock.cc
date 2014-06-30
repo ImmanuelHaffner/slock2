@@ -221,11 +221,7 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
         Logger::get()->l( "incorrect password entered" );
 
         if ( enableBell )
-        {
           XBell( display, 100 );
-          XBell( display, 100 );
-          XBell( display, 100 );
-        }
 
         len = 0;  // set length of entered password to 0
         break;
