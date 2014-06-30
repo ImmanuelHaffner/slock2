@@ -4,6 +4,10 @@
 
 #include <X11/Xlib.h>
 
+#ifndef FONTNAME
+#define FONTNAME "-*-helvetica-*-r-*-*-14-*-*-*-*-*-*-*"
+#endif
+
 
 typedef struct {
   bool ok;
@@ -13,6 +17,8 @@ typedef struct {
   XColor colorActive;
   XColor colorInactive;
   XColor colorError;
+  GC gc;
+  XFontStruct *font;
 } Lock;
 
 

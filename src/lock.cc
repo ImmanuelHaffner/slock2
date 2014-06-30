@@ -52,13 +52,11 @@ void lock( Display * const display, Lock * const lock )
 
   /* Create Window Attributes for a new window. */
   XSetWindowAttributes wa;
-  wa.override_redirect = 1;
+  wa.override_redirect = true;
   wa.background_pixel = lock->colorInactive.pixel;
+  wa.colormap = DefaultColormap( display, lock->screen );
 
-  /* Create a new window.
-   *
-   * see http://menehune.opt.wfu.edu/Kokua/Irix_6.5.21_doc_cd/usr/share/Insight/library/SGI_bookshelves/SGI_Developer/books/XLib_PG/sgi_html/ch04.html
-   */
+  /* Create a new window. */
   lock->win = XCreateWindow(
       display,      /* the display where to create this window */
       lock->root,   /* the parent of this window */
@@ -98,9 +96,22 @@ void lock( Display * const display, Lock * const lock )
   /* Use the invisible cursor. */
   XDefineCursor( display, lock->win, cursor );
 
+  /* Create graphics context. */
+  lock->gc = XCreateGC( display, lock->win, 0, 0 );
+  /* Load font. */
+  lock->font = XLoadQueryFont( display, FONTNAME );
+  if ( ! lock->font )
+  {
+    Logger::get()->d( "Font '" FONTNAME "' could not be loaded" );
+    /* Fall back to fixed font. */
+    lock->font = XLoadQueryFont( display, "fixed" );
+  }
+  XSetFont( display, lock->gc, lock->font->fid );
+
   /* Map the window to the display, and raise it to the top. */
   XMapRaised( display, lock->win );
 
+  /* Make root window grab all keyboard + mouse events. */
   int grab = XGrabPointer(
       display,
       lock->root,     /* grab window */
@@ -140,6 +151,7 @@ void lock( Display * const display, Lock * const lock )
     return;
   }
 
+  /* Use events from root window. */
   XSelectInput( display, lock->root, SubstructureNotifyMask );
 
   lock->ok = true;

@@ -16,6 +16,7 @@
 #include <cstdlib>      // exit()
 #include <err.h>        // errx()
 #include <errno.h>      // number of errors
+#include <string>       // to_string
 #include <iostream>
 
 #include <unistd.h>     // write(), getuid()
@@ -32,6 +33,7 @@
 #include "argparser.h"
 #include "logger.h"
 #include "lock.h"
+#include "event.h"
 
 
 /* Start parameters.  Might be altered by the argument parser. */
@@ -91,6 +93,9 @@ static void disableOOMKiller( void )
 #endif
 
 
+/**
+ * If BSD Xauth is not available, get the password in Linux-style.
+ */
 #ifndef HAVE_BSD_AUTH
 static const char * getpw() /* only run as root */
 {
@@ -133,7 +138,7 @@ static const char * getpw() /* only run as root */
   /* drop privileges */
   if ( geteuid() == 0 &&
       ( (getegid() != pw->pw_gid && setgid(pw->pw_gid) < 0) ||
-       setuid(pw->pw_uid) < 0 ) )
+        setuid(pw->pw_uid) < 0 ) )
   {
     Logger::get()->e( "cannot drop privileges" );
     exit( EXIT_FAILURE );
@@ -144,6 +149,10 @@ static const char * getpw() /* only run as root */
 #endif
 
 
+/**
+ * Catch XEvents and read in the password.
+ * If the correct password is entered, the cuntion returns.
+ */
 static void
 #ifdef HAVE_BSD_AUTH
 readpw( Display *display, Lock locks[], int nscreens )
@@ -166,11 +175,8 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
   bool running = true;
   while ( running && ! XNextEvent( display, &ev ) )
   {
-    Logger::get()->d( "new XEvent" );
-
     if ( KeyPress != ev.type )
     {
-      Logger::get()->d( "XEvent: not a key press event" );
       for ( int i = 0; i < nscreens; ++i )
         XRaiseWindow( display, locks[ i ].win );
       continue;
@@ -201,10 +207,7 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
     if ( IsFunctionKey( ksym ) || IsKeypadKey( ksym ) ||
         IsMiscFunctionKey( ksym ) || IsPFKey( ksym ) ||
         IsPrivateKeypadKey( ksym ) )
-    {
-      Logger::get()->d( "XEvent: special key, ignoring" );
       continue;
-    }
 
     switch ( ksym )
     {
@@ -220,12 +223,14 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
 
         if ( ! running )
         {
-          Logger::get()->l( "correct password entered" );
+          Logger::get()->l( "Correct password entered" );
+          loginSuccess();
           goto end;
         }
 
-        Logger::get()->l( "incorrect password entered" );
         ++fails;
+        Logger::get()->l( "Incorrect password entered (#", fails, ")" );
+        loginFail();
 
         if ( enableBell )
           XBell( display, 100 );
@@ -247,17 +252,11 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
       default:
         {
           if ( ! num )
-          {
-            Logger::get()->d( "XEvent: no bytes read" );
             break;
-          }
 
           /* Ignore control keys. */
           if ( iscntrl( (int) buf[ 0 ] ) )
-          {
-            Logger::get()->d( "XEvent: control key, ignoring" );
             break;
-          }
 
           /* Append the read bytes to the password. */
           if ( len + num < sizeof( passwd ) ) {
@@ -270,7 +269,7 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
         break;
     } // end switch ( ksym )
 
-    if ( 0 == lastLen && 0 != len )
+    if ( 0 == lastLen && 0 != len ) // characters entered
     {
       for ( int i = 0; i < nscreens; ++i )
       {
@@ -279,14 +278,33 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
         XClearWindow( display, locks[ i ].win );
       }
     }
-    else if ( 0 != lastLen && 0 == len )
+    else if ( ! fails && 0 != lastLen && 0 == len )  // all characters removed
       for ( int i = 0; i < nscreens; ++i )
       {
+        /* Set the background color. */
         XSetWindowBackground( display, locks[ i ].win,
-            fails ? locks[ i ].colorError.pixel : locks[ i ].colorInactive.pixel
-            );
+            locks[ i ].colorInactive.pixel );
         XClearWindow( display, locks[ i ].win );
       }
+    else if ( fails && 0 == len )
+    {
+      std::string str = std::to_string( fails );
+      for ( int i = 0; i < nscreens; ++i )
+      {
+        /* Set the background color. */
+        XSetWindowBackground( display, locks[ i ].win,
+            locks[ i ].colorError.pixel );
+        XClearWindow( display, locks[ i ].win );
+
+        /* Draw the number of failed login attempts. */
+        XDrawString( display, locks[ i ].win,
+            locks[ i ].gc,
+            10,  /* X */
+            10,  /* Y */
+            str.c_str(),
+            str.length() );
+      }
+    }
 
     lastLen = len;
   } // end while
@@ -301,6 +319,7 @@ int main( int, char **argv )
   Logger::create( logfile, logLevel );
   if ( atexit( Logger::destroy ) )
     Logger::get()->w( "Could not register atexit( Logger::destroy() )" );
+
   Logger::get()->l( "Launched ", *argv );
 
 #ifdef __linux__
@@ -364,7 +383,7 @@ int main( int, char **argv )
 #ifdef HAVE_BSD_AUTH
   readpw( display, locks, nscreens )
 #else
-  readpw( display, locks, nscreens, getpw() );
+    readpw( display, locks, nscreens, getpw() );
 #endif
 
   for ( int i = 0; i < nscreens; ++i )
@@ -375,6 +394,6 @@ int main( int, char **argv )
   delete locks;
   XCloseDisplay( display );
 
-  Logger::get()->l( "Exiting." );
+  Logger::get()->l( "Exiting.\n---------------------------------------------" );
   exit( EXIT_SUCCESS );
 }
