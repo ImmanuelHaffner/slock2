@@ -160,6 +160,9 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
   KeySym ksym;
   XEvent ev;
 
+  /* Counts the number of failed login attempts. */
+  unsigned fails = 0;
+
   bool running = true;
   while ( running && ! XNextEvent( display, &ev ) )
   {
@@ -222,6 +225,7 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
         }
 
         Logger::get()->l( "incorrect password entered" );
+        ++fails;
 
         if ( enableBell )
           XBell( display, 100 );
@@ -279,7 +283,8 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
       for ( int i = 0; i < nscreens; ++i )
       {
         XSetWindowBackground( display, locks[ i ].win,
-            locks[ i ].colorInactive.pixel );
+            fails ? locks[ i ].colorError.pixel : locks[ i ].colorInactive.pixel
+            );
         XClearWindow( display, locks[ i ].win );
       }
 
