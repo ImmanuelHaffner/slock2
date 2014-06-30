@@ -73,16 +73,20 @@ static void disableOOMKiller( void )
    * written, or the file could not be closed, exit with failure.
    */
   if ( write( fd, "-1000\n", 6 ) != 6 )
+  {
     Logger::get()->e(
         "cannot disable the out-of-memory killer for this process: "
         "could not write to " OOM );
-  exit( EXIT_FAILURE );
+    exit( EXIT_FAILURE );
+  }
 
   if ( close( fd ) )
+  {
     Logger::get()->e(
         "cannot disable the out-of-memory killer for this process: "
         "could not close " OOM );
-  exit( EXIT_FAILURE );
+    exit( EXIT_FAILURE );
+  }
 }
 #endif
 
