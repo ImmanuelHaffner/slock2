@@ -102,7 +102,7 @@ void lock( Display * const display, Lock * const lock )
   lock->font = XLoadQueryFont( display, FONTNAME );
   if ( ! lock->font )
   {
-    Logger::get()->d( "Font '" FONTNAME "' could not be loaded" );
+    Logger::get()->d( "font '" FONTNAME "' could not be loaded" );
     /* Fall back to fixed font. */
     lock->font = XLoadQueryFont( display, "fixed" );
   }

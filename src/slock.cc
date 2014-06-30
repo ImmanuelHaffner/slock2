@@ -346,6 +346,7 @@ int main( int, char **argv )
 
   /* Obtain a lock for every screen. */
   int const nscreens = ScreenCount( display );
+  Logger::get()->d( "screen count = ", nscreens );
   Lock *locks = new Lock[ sizeof( *locks ) * nscreens ];
 
   if ( ! locks )
