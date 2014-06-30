@@ -16,6 +16,7 @@ void usage()
     "  -v  --verbose          - make slock verbose\n"
     "      --debug            - produce debug messages\n"
     "      --logfile <FILE>   - sets the log file (default: " LOGFILE ")\n"
+    "      --version          - report the version\n"
     ;
   std::cout.flush();
 }
@@ -51,6 +52,15 @@ void parseArguments( char **argv )
         usage();
         errx( EXIT_FAILURE, "no logfile specified\n" );
       }
+    }
+    else if ( streq( arg, "--version" ) )
+    {
+      std::cout <<
+        "slock2\n"
+        "Version " VERSION "\n"
+        __DATE__ "\n"
+        "Immanuel Haffner\n"
+        ;
     }
     else
     {
