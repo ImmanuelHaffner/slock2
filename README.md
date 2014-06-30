@@ -39,6 +39,26 @@ Requirements
 In order to build **slock2** you need the `Xlib` header files.
 
 
+Build
+-----
+
+To build **slock2** issue the command
+
+    $ make
+
+To configure the build process, you can create the file `default.cfg` in the
+root directory of this project.  Some available settings are:
+
+| Flag                  | Example                                                        |
+|-----------------------|----------------------------------------------------------------|
+| CXX                   | CXX = clang++                                                  |
+| DEBUG                 | DEBUG = 1, DEBUG = 0 (default)                                 |
+| VERBOSE               | VERBOSE = 1, VERBOSE = 0 (default)                             |
+| COLOR_INACTIVE        | COLOR_INACTIVE = \"black\", COLOR_INACTIVE = \"#005577¸"       |
+| COLOR_ACTIVE          | COLOR_ACTIVE   = \"black\", COLOR_ACTIVE   = \"#005577¸"       |
+| COLOR_ERROR           | COLOR_ERROR    = \"black\", COLOR_ERROR    = \"#005577¸"       |
+
+
 Installation
 ------------
 
@@ -54,6 +74,7 @@ Afterwards enter the following command to build and install **slock2**
 **slock2** needs root privileges to disable the Out-Of-Memory Killer in Linux,
 and to access the password file.  Therefore, you need to make *root* the owner
 of **slock2**, and set the *SetUID* bit.
+(This is already done by `make install`.)
 
 
 Running slock
