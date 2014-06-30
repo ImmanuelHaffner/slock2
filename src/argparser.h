@@ -7,6 +7,8 @@
 
 extern Logger::LogLevel logLevel;
 extern char const *logfile;
+extern bool enableBell;
+
 void parseArguments( char **argv );
 
 

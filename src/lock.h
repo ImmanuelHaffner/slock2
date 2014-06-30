@@ -6,6 +6,7 @@
 
 
 typedef struct {
+  bool ok;
   int screen;
   Window root, win;
   Pixmap pmap;
@@ -20,7 +21,7 @@ void init( Display * const display, Lock * const lock );
 /**
  * Locks the `screen`th screen of the display.
  */
-bool lock( Display * const display, Lock * const lock );
+void lock( Display * const display, Lock * const lock );
 
 /**
  * Unlocks the `screen`th screen of the display.

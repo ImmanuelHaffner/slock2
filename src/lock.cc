@@ -39,19 +39,26 @@ void init( Display * const display, Lock * const lock )
       COLOR_ERROR,
       &lock->colorError,
       &dummy );
+
+  Logger::get()->d( "initialized lock for screen ", lock->screen );
 }
 
-bool lock( Display * const display, Lock * const lock )
+void lock( Display * const display, Lock * const lock )
 {
   assert( display && "display must not be NULL" );
   assert( lock && "lock must not be NULL" );
+
+  lock->ok = false;
 
   /* Create Window Attributes for a new window. */
   XSetWindowAttributes wa;
   wa.override_redirect = 1;
   wa.background_pixel = lock->colorInactive.pixel;
 
-  /* Create a new window. */
+  /* Create a new window.
+   *
+   * see http://menehune.opt.wfu.edu/Kokua/Irix_6.5.21_doc_cd/usr/share/Insight/library/SGI_bookshelves/SGI_Developer/books/XLib_PG/sgi_html/ch04.html
+   */
   lock->win = XCreateWindow(
       display,      /* the display where to create this window */
       lock->root,   /* the parent of this window */
@@ -63,7 +70,7 @@ bool lock( Display * const display, Lock * const lock )
       DefaultDepth( display, lock->screen ),  /* color depth */
       CopyFromParent,                         /* window class */
       DefaultVisual( display, lock->screen ), /* visual type */
-      CWOverrideRedirect,                     /* value mask */
+      CWOverrideRedirect | CWBackPixel,       /* value mask */
       &wa                                     /* window attributes */
       );
 
@@ -81,7 +88,7 @@ bool lock( Display * const display, Lock * const lock )
   Cursor cursor = XCreatePixmapCursor(
       display,
       lock->pmap,           /* shape of the source cursor */
-      None,                 /* mask */
+      lock->pmap,           /* mask */
       &lock->colorInactive, /* foreground color */
       &lock->colorInactive, /* background color */
       0,                    /* X-Pos */
@@ -112,7 +119,7 @@ bool lock( Display * const display, Lock * const lock )
   {
     Logger::get()->d( "failed to grab the pointer for screen ", lock->screen );
     unlock( display, lock );
-    return false;
+    return;
   }
 
   grab = XGrabKeyboard(
@@ -130,12 +137,12 @@ bool lock( Display * const display, Lock * const lock )
   {
     Logger::get()->d( "failed to grab the keyboard for screen ", lock->screen );
     unlock( display, lock );
-    return false;
+    return;
   }
 
   XSelectInput( display, lock->root, SubstructureNotifyMask );
 
-  return true;
+  lock->ok = true;
 }
 
 void unlock( Display * const display, Lock * const lock )
@@ -145,9 +152,18 @@ void unlock( Display * const display, Lock * const lock )
 
   /* Return the pointer to all windows. */
   XUngrabPointer( display, CurrentTime );
-  //XFreeColors( display, DefaultColormap( display, lock->screen ), lock->colors,
-  //2, 0);
-  //
+
+  unsigned long pixels[] = {
+    lock->colorInactive.pixel,
+    lock->colorActive.pixel,
+    lock->colorError.pixel };
+
+  XFreeColors(
+      display,
+      DefaultColormap( display, lock->screen ),
+      pixels,
+      sizeof( pixels ) / sizeof( pixels[0] ),
+      0 );
 
   /* Cause the X server to free the pixmap storage, as soon as there are no more
    * references to it.

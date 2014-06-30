@@ -12,6 +12,7 @@ void usage()
   std::cout <<
     "slock\n"
     "  -h  --help             - prints this message\n"
+    "  -b  --bell             - sound signal on failed login\n"
     "  -v  --verbose          - make slock verbose\n"
     "  -d  --debug            - produce debug messages\n"
     "  -l  --logfile <FILE>   - sets the log file\n"
@@ -28,6 +29,10 @@ void parseArguments( char **argv )
     {
       usage();
       exit( EXIT_SUCCESS );
+    }
+    else if ( streq( arg, "-b" ) || streq( arg, "--bell" ) )
+    {
+      enableBell = true;
     }
     else if ( streq( arg, "-v" ) || streq( arg, "--verbose" ) )
     {

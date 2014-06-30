@@ -21,6 +21,8 @@
 #include <unistd.h>     // write(), getuid()
 #include <pwd.h>        // getpwuid()
 #include <X11/Xlib.h>   // XOpenDisplay()
+#include <X11/keysym.h>
+#include <X11/Xutil.h>
 
 #if HAVE_BSD_AUTH
 #include <login_cap.h>
@@ -38,6 +40,7 @@ Logger::LogLevel logLevel = Logger::LL_Normal;
 #define LOGFILE "/var/log/slock.log"
 #endif
 char const *logfile   = LOGFILE;
+bool enableBell       = false;
 
 
 #ifdef __linux__
@@ -84,6 +87,213 @@ static void disableOOMKiller( void )
 #endif
 
 
+#ifndef HAVE_BSD_AUTH
+static const char * getpw() /* only run as root */
+{
+  const char *rval;
+  struct passwd *pw;
+
+  errno = 0;
+  pw = getpwuid(getuid());
+  if (errno)
+  {
+    Logger::get()->e( "getpwuid ", strerror( errno ) );
+    exit( EXIT_FAILURE );
+  }
+  else if ( ! pw )
+  {
+    Logger::get()->e(
+        "cannot retrieve password entry (make sure to suid or sgid slock)" );
+    exit(EXIT_FAILURE);
+  }
+
+  endpwent();
+  rval =  pw->pw_passwd;
+
+#if HAVE_SHADOW_H
+  if (rval[0] == 'x' && rval[1] == '\0') {
+    struct spwd *sp;
+    sp = getspnam(getenv("USER"));
+    if ( ! sp )
+    {
+      Logger::get()->e(
+          "cannot retrieve shadow entry (make sure to suid or sgid slock)" );
+      exit( EXIT_FAILURE );
+    }
+
+    endspent();
+    rval = sp->sp_pwdp;
+  }
+#endif
+
+  /* drop privileges */
+  if ( geteuid() == 0 &&
+      ( (getegid() != pw->pw_gid && setgid(pw->pw_gid) < 0) ||
+       setuid(pw->pw_uid) < 0 ) )
+  {
+    Logger::get()->e( "cannot drop privileges" );
+    exit(EXIT_FAILURE);
+  }
+
+  return rval;
+}
+#endif
+
+
+static void
+#ifdef HAVE_BSD_AUTH
+readpw( Display *display, Lock locks[], int nscreens )
+#else
+readpw( Display *display, Lock locks[], int nscreens, const char *pws )
+#endif
+{
+  char buf[32];
+  /* A buffer for the entered password. */
+  char passwd[256];
+  /* Length of the entered password */
+  unsigned len = 0;
+  unsigned lastLen = len;
+  KeySym ksym;
+  XEvent ev;
+
+  bool running = true;
+  while ( running && ! XNextEvent( display, &ev ) )
+  {
+    Logger::get()->d( "new XEvent" );
+
+    if ( KeyPress != ev.type )
+    {
+      Logger::get()->d( "XEvent: not a key press event" );
+      for ( int i = 0; i < nscreens; ++i )
+        XRaiseWindow( display, locks[ i ].win );
+      Logger::get()->d( "XEvent: raised all lock windows" );
+      continue;
+    }
+
+    buf[ 0 ] = 0; // string terminator
+
+    int num =
+      XLookupString(
+          &ev.xkey,       /* XKeyEvent */
+          buf,            /* return buffer */
+          sizeof( buf ),  /* buffer bytes */
+          &ksym,          /* KeySym return */
+          NULL            /* XComposeStatus */
+          );
+
+
+    /* Translate keys from notepad to regular keys. */
+    if ( IsKeypadKey( ksym ) )
+    {
+      if ( XK_KP_Enter == ksym )
+        ksym = XK_Return;
+      else if ( XK_KP_0 <= ksym && ksym <= XK_KP_9)
+        ksym = ( ksym - XK_KP_0 ) + XK_0;
+    }
+
+    /* Ignore special keys. */
+    if ( IsFunctionKey( ksym ) || IsKeypadKey( ksym ) ||
+        IsMiscFunctionKey( ksym ) || IsPFKey( ksym ) ||
+        IsPrivateKeypadKey( ksym ) )
+    {
+      Logger::get()->d( "XEvent: special key, ignoring" );
+      continue;
+    }
+
+    switch ( ksym )
+    {
+      case XK_Return:
+        Logger::get()->d( "XEvent: Return" );
+        passwd[ len ] = 0; // string terminator
+
+#ifdef HAVE_BSD_AUTH
+        running = ! auth_userokay( getlogin(), NULL, "auth-xlock", passwd );
+#else
+        running = ! streq( crypt( passwd, pws ), pws );
+#endif
+
+        if ( ! running )
+        {
+          Logger::get()->l( "correct password entered" );
+          goto end;
+        }
+
+        Logger::get()->l( "incorrect password entered" );
+
+        if ( enableBell )
+        {
+          XBell( display, 100 );
+          XBell( display, 100 );
+          XBell( display, 100 );
+        }
+
+        len = 0;  // set length of entered password to 0
+        break;
+
+      case XK_Escape:
+        Logger::get()->d( "XEvent: Escape" );
+        len = 0;  // set length of entered password to 0
+        break;
+
+      case XK_BackSpace:
+        Logger::get()->d( "XEvent: BackSpace" );
+        if ( len )
+          --len;
+        Logger::get()->d( "XEvent: remaining length is ", len );
+        break;
+
+      default:
+        {
+          if ( ! num )
+          {
+            Logger::get()->d( "XEvent: no bytes read" );
+            break;
+          }
+
+          Logger::get()->d( "XEvent: read ", num, " bytes" );
+
+          /* Ignore control keys. */
+          if ( iscntrl( (int) buf[ 0 ] ) )
+          {
+            Logger::get()->d( "XEvent: control key, ignoring" );
+            break;
+          }
+
+          /* Append the read bytes to the password. */
+          if ( len + num < sizeof( passwd ) ) {
+            memcpy( passwd + len, buf, num );
+            len += num;
+          }
+          else
+            Logger::get()->w( "input exceeds password buffer" );
+
+        }
+        break;
+    } // end switch ( ksym )
+
+    if ( 0 == lastLen && 0 != len )
+    {
+      for ( int i = 0; i < nscreens; ++i )
+      {
+        XSetWindowBackground( display, locks[ i ].win,
+            locks[ i ].colorActive.pixel );
+        XClearWindow( display, locks[ i ].win );
+      }
+    }
+    else if ( 0 != lastLen && 0 == len )
+      for ( int i = 0; i < nscreens; ++i )
+      {
+        XSetWindowBackground( display, locks[ i ].win,
+            locks[ i ].colorInactive.pixel );
+        XClearWindow( display, locks[ i ].win );
+      }
+
+    lastLen = len;
+  } // end while
+end:;
+}
+
+
 int main( int, char **argv )
 {
   parseArguments( argv );
@@ -124,17 +334,46 @@ int main( int, char **argv )
     exit( EXIT_FAILURE );
   }
 
+  int nlocks = 0;
   for ( int screen = 0; screen < nscreens; ++screen )
   {
     locks[ screen ].screen = screen;
     init( display, &locks[ screen ] );
-    if ( lock( display, &locks[ screen ] ) )
+    lock( display, &locks[ screen ] );
+    if ( locks[ screen ].ok )
+    {
+      ++nlocks;
       Logger::get()->d( "locked screen ", screen );
+    }
     else
       Logger::get()->d( "failed to lock screen ", screen );
   }
 
   XSync( display, False );
+  Logger::get()->d( "synced display" );
 
+  if ( ! nlocks )
+  {
+    delete locks;
+    XCloseDisplay( display );
+    Logger::get()->e( "no locks have been acquired" );
+    exit( EXIT_FAILURE );
+  }
+
+#ifdef HAVE_BSD_AUTH
+  readpw( display, locks, nscreens )
+#else
+  readpw( display, locks, nscreens, getpw() );
+#endif
+
+  for ( int i = 0; i < nscreens; ++i )
+    if ( locks[ i ].ok )
+      unlock( display, &locks[ i ] );   // deletes the lock
+  Logger::get()->d( "all screens have been unlocked" );
+
+  delete locks;
+  XCloseDisplay( display );
+
+  Logger::get()->l( "Exiting." );
   exit( EXIT_SUCCESS );
 }
