@@ -56,10 +56,12 @@ X11_LDFLAGS := -L${X11_PATH} -lX11 -lXext
 COLOR_INACTIVE 	?= \"black\"			# normal
 COLOR_ACTIVE 		?= \"\#005577\"		# typing
 COLOR_ERROR			?= \"red\"
-DEFS 		 = -DVERSION=\"${VERSION}\" -DHAVE_SHADOW_H \
+DEFS 		 = -DVERSION=\"${VERSION}\" \
 					 -DCOLOR_INACTIVE=${COLOR_INACTIVE} \
 					 -DCOLOR_ACTIVE=${COLOR_ACTIVE} \
-					 -DCOLOR_ERROR=${COLOR_ERROR}
+					 -DCOLOR_ERROR=${COLOR_ERROR} \
+					 -DHAVE_SHADOW_H #\
+					 -DHAVE_BSD_AUTH
 
 CFLAGS			+= ${X11_CFLAGS} ${DEFS} -Wall -W -pedantic
 CXXFLAGS		+= ${CFLAGS} -std=c++11
