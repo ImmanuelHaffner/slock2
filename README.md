@@ -9,6 +9,8 @@ Features
 * more transparent and better documented code
 * a simple but powerful logger
 * some command-line arguments
+* event-handling with a shell script
+* TODO: udev
 
 
 ### Logger
