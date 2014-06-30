@@ -13,13 +13,13 @@ Features
 
 ### Logger
 
-The logger of **slock2** is a simple and lightweight logging utility.  The
+**slock2** contains a simple and lightweight logging utility.  The
 logger features the different log levels `ERROR`, `WARNING`, `NORMAL`, `VERBOSE`
 and `DEBUG`.  In `VERBOSE`-mode the logger mirrors all log output to `stdout`.
 `DEBUG` subsumes `VERBOSE`, and adds further log output relevant for debugging.
 
 
-### Command-line arguments
+#### Command-line arguments
 
 **slock2** provides some command-line arguments to modify it's behaviour:
 
@@ -46,10 +46,10 @@ Edit the `install.cfg` to match your local setup.
 
 Afterwards enter the following command to build and install **slock2**
 
-    $ make all clean install
+    $ make install
 
 
-### IMPORTANT: Root privileges
+#### IMPORTANT: Root privileges
 
 **slock2** needs root privileges to disable the Out-Of-Memory Killer in Linux,
 and to access the password file.  Therefore, you need to make *root* the owner
