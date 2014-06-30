@@ -8,7 +8,7 @@
 BUILDDIR		?= build
 CFG					?= default
 NAME				?= slock
-VERSION			?= 1.2
+VERSION			?= 1.0
 SRCDIR			?= src
 DOCSDIR			?= doc
 
@@ -96,7 +96,11 @@ cleanall: clean
 #MODE=2755
 #GROUP=auth
 
-install: unsupported
+install: all
+	sudo cp ./build/default/slock /usr/local/bin/slock
+	sudo chmod a+x /usr/local/bin/slock
+	sudo chmod u+s /usr/local/bin/slock
+
 
 uninstall: unsupported
 
