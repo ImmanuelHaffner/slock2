@@ -33,10 +33,10 @@ void raiseEvent( char const * const name )
   if ( 0 == fork() ) /* Child. */
   {
     execl(
-        "/usr/bin/sh",  /* path */
-        "sh",           /* 1st argument: program name */
-        EVENT_HANDLER,  /* 2nd argument: shell script path */
-        name            /* 3rd argument: argument to the shell script */
+        "/usr/bin/bash",  /* path */
+        "bash",           /* 1st argument: program name */
+        EVENT_HANDLER,    /* 2nd argument: shell script path */
+        name              /* 3rd argument: argument to the shell script */
         );
 
     Logger::get()->e( strerror( errno ) );

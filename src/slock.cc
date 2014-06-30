@@ -321,6 +321,7 @@ int main( int, char **argv )
     Logger::get()->w( "Could not register atexit( Logger::destroy() )" );
 
   Logger::get()->l( "Launched ", *argv );
+  raiseEvent( "start" );
 
 #ifdef __linux__
   /* Disable the Out-of-memory killer for this process. */
@@ -401,5 +402,6 @@ int main( int, char **argv )
   XCloseDisplay( display );
 
   Logger::get()->l( "Exiting.\n---------------------------------------------" );
+  raiseEvent( "exit" );
   exit( EXIT_SUCCESS );
 }
