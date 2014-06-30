@@ -63,23 +63,26 @@ static void disableOOMKiller( void )
     }
 
     /* If the file could not be opened, fail. */
-    errx( EXIT_FAILURE,
-        "cannot disable the out-of-memory killer for this process: "
+    Logger::get()->e(
+        "Cannot disable the out-of-memory killer for this process: "
         "could not open " OOM );
+    exit( EXIT_FAILURE );
   }
 
   /* If the file could not be opened for write-only, or the file could not be
    * written, or the file could not be closed, exit with failure.
    */
   if ( write( fd, "-1000\n", 6 ) != 6 )
-    errx( EXIT_FAILURE,
+    Logger::get()->e(
         "cannot disable the out-of-memory killer for this process: "
         "could not write to " OOM );
+  exit( EXIT_FAILURE );
 
   if ( close( fd ) )
-    errx( EXIT_FAILURE,
+    Logger::get()->e(
         "cannot disable the out-of-memory killer for this process: "
         "could not close " OOM );
+  exit( EXIT_FAILURE );
 }
 #endif
 
@@ -101,7 +104,7 @@ static const char * getpw() /* only run as root */
   {
     Logger::get()->e(
         "cannot retrieve password entry (make sure to suid or sgid slock)" );
-    exit(EXIT_FAILURE);
+    exit( EXIT_FAILURE );
   }
 
   endpwent();
@@ -129,7 +132,7 @@ static const char * getpw() /* only run as root */
        setuid(pw->pw_uid) < 0 ) )
   {
     Logger::get()->e( "cannot drop privileges" );
-    exit(EXIT_FAILURE);
+    exit( EXIT_FAILURE );
   }
 
   return rval;
@@ -163,7 +166,6 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
       Logger::get()->d( "XEvent: not a key press event" );
       for ( int i = 0; i < nscreens; ++i )
         XRaiseWindow( display, locks[ i ].win );
-      Logger::get()->d( "XEvent: raised all lock windows" );
       continue;
     }
 
@@ -232,7 +234,6 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
         Logger::get()->d( "XEvent: BackSpace" );
         if ( len )
           --len;
-        Logger::get()->d( "XEvent: remaining length is ", len );
         break;
 
       default:
@@ -242,8 +243,6 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
             Logger::get()->d( "XEvent: no bytes read" );
             break;
           }
-
-          Logger::get()->d( "XEvent: read ", num, " bytes" );
 
           /* Ignore control keys. */
           if ( iscntrl( (int) buf[ 0 ] ) )
@@ -258,8 +257,7 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
             len += num;
           }
           else
-            Logger::get()->w( "input exceeds password buffer" );
-
+            Logger::get()->w( "Input exceeds password buffer" );
         }
         break;
     } // end switch ( ksym )
@@ -293,7 +291,7 @@ int main( int, char **argv )
 
   Logger::create( logfile, logLevel );
   if ( atexit( Logger::destroy ) )
-    Logger::get()->w( "could not register atexit( Logger::destroy() )" );
+    Logger::get()->w( "Could not register atexit( Logger::destroy() )" );
   Logger::get()->l( "Launched ", *argv );
 
 #ifdef __linux__
@@ -306,7 +304,7 @@ int main( int, char **argv )
   uid_t UID = getuid();
   if ( ! getpwuid( UID ) )
   {
-    Logger::get()->e( "no password entry for UID ", UID );
+    Logger::get()->e( "No password entry for UID ", UID );
     exit( EXIT_FAILURE );
   }
 
@@ -314,7 +312,7 @@ int main( int, char **argv )
   Display *display = XOpenDisplay( 0 );
   if ( ! display )
   {
-    Logger::get()->e( "cannot open display" );
+    Logger::get()->e( "Cannot open a connection to X Server" );
     exit( EXIT_FAILURE );
   }
 
@@ -324,7 +322,7 @@ int main( int, char **argv )
 
   if ( ! locks )
   {
-    Logger::get()->e( "failed to allocate locks: ", strerror( errno ) );
+    Logger::get()->e( "Failed to allocate locks: ", strerror( errno ) );
     exit( EXIT_FAILURE );
   }
 
@@ -350,7 +348,7 @@ int main( int, char **argv )
   {
     delete locks;
     XCloseDisplay( display );
-    Logger::get()->e( "no locks have been acquired" );
+    Logger::get()->e( "No locks have been acquired" );
     exit( EXIT_FAILURE );
   }
 
