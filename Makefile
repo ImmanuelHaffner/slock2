@@ -53,10 +53,13 @@ X11_LDFLAGS := -L${X11_PATH} -lX11 -lXext
 
 # flags
 # On *BSD remove -DHAVE_SHADOW_H from CPPFLAGS and add -DHAVE_BSD_AUTH
-COLOR1 	?= \"black\"			# normal
-COLOR2 	?= \"\#005577\"		# typing
-DEFS 		 = -DVERSION=\"${VERSION}\" -DHAVE_SHADOW_H -DCOLOR1=${COLOR1} \
-					 -DCOLOR2=${COLOR2}
+COLOR_INACTIVE 	?= \"black\"			# normal
+COLOR_ACTIVE 		?= \"\#005577\"		# typing
+COLOR_ERROR			?= \"red\"
+DEFS 		 = -DVERSION=\"${VERSION}\" -DHAVE_SHADOW_H \
+					 -DCOLOR_INACTIVE=${COLOR_INACTIVE} \
+					 -DCOLOR_ACTIVE=${COLOR_ACTIVE} \
+					 -DCOLOR_ERROR=${COLOR_ERROR}
 
 CFLAGS			+= ${X11_CFLAGS} ${DEFS} -Wall -W -pedantic
 CXXFLAGS		+= ${CFLAGS} -std=c++11
