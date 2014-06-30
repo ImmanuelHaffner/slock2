@@ -1,22 +1,39 @@
 /* See LICENSE file for license details. */
 
 
-#include <cstddef>
-#include <cstdlib>
+/*
+ * 500 - X/Open 5, incorporating POSIX 1995
+ * 600 - X/Open 6, incorporating POSIX 2004
+ * 700 - X/Open 7, incorporating POSIX 2008
+ */
+#define _XOPEN_SOURCE 500
+
+#if HAVE_SHADOW_H
+#include <shadow.h>
+#endif
+
+#include <cstddef>      // EXIT_FAILURE, EXIT_SUCCESS
+#include <cstdlib>      // exit()
 #include <err.h>        // errx()
 #include <errno.h>      // number of errors
 #include <iostream>
 
 #include <unistd.h>     // write(), getuid()
-#include <pwd.h>
+#include <pwd.h>        // getpwuid()
 #include <X11/Xlib.h>   // XOpenDisplay()
+
+#if HAVE_BSD_AUTH
+#include <login_cap.h>
+#include <bsd_auth.h>
+#endif
 
 #include "argparser.h"
 #include "logger.h"
+#include "lock.h"
 
 
 /* Start parameters.  Might be altered by the argument parser. */
-bool verbose    = false;
+Logger::LogLevel logLevel = Logger::LL_Normal;
 #ifndef LOGFILE
 #define LOGFILE "/var/log/slock.log"
 #endif
@@ -41,8 +58,7 @@ static void disableOOMKiller( void )
     /* If the file does not exist, return. */
     if ( ENOENT == errno )
     {
-      Logger::get()->log( Logger::VERBOSE,
-          "/proc/self/oom_score_adj does not exist (OK)" );
+      Logger::get()->d( "/proc/self/oom_score_adj does not exist (OK)" );
       return;
     }
 
@@ -72,8 +88,8 @@ int main( int, char **argv )
 {
   parseArguments( argv );
 
-  Logger::create( logfile );
-  Logger::get()->log( "Launched ", *argv );
+  Logger::create( logfile, logLevel );
+  Logger::get()->l( "Launched ", *argv );
 
 #ifdef __linux__
   /* Disable the Out-of-memory killer for this process. */
@@ -85,12 +101,40 @@ int main( int, char **argv )
   uid_t UID = getuid();
   if ( ! getpwuid( UID ) )
   {
-    Logger::get()->log( Logger::ERROR, "no password entry for UID ", UID );
+    Logger::get()->e( "no password entry for UID ", UID );
     exit( EXIT_FAILURE );
   }
 
-  if ( ! XOpenDisplay( 0 ) )
-    errx( EXIT_FAILURE, "cannot open display" );
+  /* Connect to the X Server. */
+  Display *display = XOpenDisplay( 0 );
+  if ( ! display )
+  {
+    Logger::get()->e( "cannot open display" );
+    exit( EXIT_FAILURE );
+  }
+
+  /* Obtain a lock for every screen. */
+  int const nscreens = ScreenCount( display );
+  Lock *locks = new Lock[ sizeof( *locks ) * nscreens ];
+
+  if ( ! locks )
+  {
+    Logger::get()->e( "failed to allocate locks: ",
+        strerror( errno ) );
+    exit( EXIT_FAILURE );
+  }
+
+  for ( int screen = 0; screen < nscreens; ++screen )
+  {
+    locks[ screen ].screen = screen;
+    init( display, &locks[ screen ] );
+    if ( lock( display, &locks[ screen ] ) )
+      Logger::get()->d( "locked screen ", screen );
+    else
+      Logger::get()->d( "failed to lock screen ", screen );
+  }
+
+  XSync( display, False );
 
   exit( EXIT_SUCCESS );
 }
