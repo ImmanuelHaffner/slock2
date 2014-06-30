@@ -13,7 +13,8 @@ void usage()
     "slock\n"
     "  -h  --help             - prints this message\n"
     "  -v  --verbose          - make slock verbose\n"
-    "  -l  --logfile <FILE>    - sets the log file\n"
+    "  -d  --debug            - produce debug messages\n"
+    "  -l  --logfile <FILE>   - sets the log file\n"
     ;
   std::cout.flush();
 }
@@ -30,7 +31,12 @@ void parseArguments( char **argv )
     }
     else if ( streq( arg, "-v" ) || streq( arg, "--verbose" ) )
     {
-      verbose = true;
+      if ( Logger::LL_Verbose < logLevel )
+        logLevel = Logger::LL_Verbose;
+    }
+    else if ( streq( arg, "-d" ) || streq( arg, "--debug" ) )
+    {
+      logLevel = Logger::LL_Debug;
     }
     else if ( streq( arg, "-l" ) || streq( arg, "--logfile" ) )
     {

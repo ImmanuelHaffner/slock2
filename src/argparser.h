@@ -2,7 +2,10 @@
 #define ARGPARSER_H
 
 
-extern bool verbose;
+#include "logger.h"
+
+
+extern Logger::LogLevel logLevel;
 extern char const *logfile;
 void parseArguments( char **argv );
 
