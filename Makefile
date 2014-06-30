@@ -7,6 +7,7 @@
 
 BUILDDIR		?= build
 CFG					?= default
+INSTALL			?= install
 NAME				?= slock
 VERSION			?= 1.0
 SRCDIR			?= src
@@ -29,6 +30,8 @@ DUMMY				:= $(shell mkdir -p $(sort $(dir $(OBJ))))
 all: $(BIN)
 
 -include $(CFG).cfg
+
+-include $(INSTALL).cfg
 
 -include $(DEP)
 
@@ -60,6 +63,7 @@ DEFS 		 = -DVERSION=\"${VERSION}\" \
 					 -DCOLOR_INACTIVE=${COLOR_INACTIVE} \
 					 -DCOLOR_ACTIVE=${COLOR_ACTIVE} \
 					 -DCOLOR_ERROR=${COLOR_ERROR} \
+					 -DEVENT_HANDLER=\"$(EVENT_HANDLER)\" \
 					 -DHAVE_SHADOW_H #\
 					 -DHAVE_BSD_AUTH
 
@@ -97,9 +101,11 @@ cleanall: clean
 #GROUP=auth
 
 install: all
-	sudo cp ./build/default/slock /usr/local/bin/slock
-	sudo chmod a+x /usr/local/bin/slock
-	sudo chmod u+s /usr/local/bin/slock
+	sudo cp "./build/$(CFG)/$(NAME)" "$(INSTALL_PATH)"
+	sudo chmod a+x "$(INSTALL_PATH)"
+	sudo chmod u+s "$(INSTALL_PATH)"
+	sudo cp slock2-events.sh "$(EVENT_HANDLER)"
+	sudo chmod a+x "$(EVENT_HANDLER)"
 
 
 uninstall: unsupported

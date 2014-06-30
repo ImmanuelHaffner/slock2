@@ -2,6 +2,11 @@
 #define EVENT_H
 
 
+#ifndef EVENT_HANDLER
+#define EVENT_HANDLER "/usr/bin/slock-events.sh"
+#endif
+
+
 /**
  * Called when login succeeds.
  */

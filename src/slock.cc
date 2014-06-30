@@ -336,6 +336,11 @@ int main( int, char **argv )
     exit( EXIT_FAILURE );
   }
 
+  if ( XInitThreads() )
+    Logger::get()->d( "XInitThreads was successful" );
+  else
+    Logger::get()->d( "XInitThreads failed" );
+
   /* Connect to the X Server. */
   Display *display = XOpenDisplay( 0 );
   if ( ! display )
