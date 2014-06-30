@@ -36,7 +36,7 @@ void Logger::timestamp() const
   time_t thetime = time( NULL );
   struct tm *date = localtime( &thetime );
 
-  fprintf( f, "%d-%d-%d %d:%d:%d - ",
+  fprintf( f, "%4d-%02d-%02d %02d:%02d:%02d - ",
       date->tm_year + 1900,   /* year */
       date->tm_mon + 1,       /* month */
       date->tm_mday,          /* day of the month */
