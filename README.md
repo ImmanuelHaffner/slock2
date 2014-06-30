@@ -13,7 +13,7 @@ Features
 * TODO: udev
 
 
-### Logger
+#### Logger
 
 **slock2** contains a simple and lightweight logging utility.  The
 logger features the different log levels `ERROR`, `WARNING`, `NORMAL`, `VERBOSE`
