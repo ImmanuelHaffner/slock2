@@ -15,7 +15,7 @@ void usage()
     "  -b  --bell             - sound signal on failed login\n"
     "  -v  --verbose          - make slock verbose\n"
     "  -d  --debug            - produce debug messages\n"
-    "  -l  --logfile <FILE>   - sets the log file\n"
+    "  -l  --logfile <FILE>   - sets the log file (default: " LOGFILE ")\n"
     ;
   std::cout.flush();
 }

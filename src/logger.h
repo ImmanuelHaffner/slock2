@@ -41,6 +41,8 @@ struct Logger
     return Logger::instance;
   }
 
+  static inline void destroy() { delete Logger::instance; }
+
   ~Logger()
   {
     if ( fclose( f ) )

@@ -172,5 +172,5 @@ void unlock( Display * const display, Lock * const lock )
   /* Cause the X server to destroy the specified window. */
   XDestroyWindow( display, lock->win );
 
-  delete lock;
+  //delete lock;
 }

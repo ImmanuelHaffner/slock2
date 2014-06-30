@@ -36,9 +36,6 @@
 
 /* Start parameters.  Might be altered by the argument parser. */
 Logger::LogLevel logLevel = Logger::LL_Normal;
-#ifndef LOGFILE
-#define LOGFILE "/var/log/slock.log"
-#endif
 char const *logfile   = LOGFILE;
 bool enableBell       = false;
 
@@ -295,6 +292,8 @@ int main( int, char **argv )
   parseArguments( argv );
 
   Logger::create( logfile, logLevel );
+  if ( atexit( Logger::destroy ) )
+    Logger::get()->w( "could not register atexit( Logger::destroy() )" );
   Logger::get()->l( "Launched ", *argv );
 
 #ifdef __linux__
@@ -325,8 +324,7 @@ int main( int, char **argv )
 
   if ( ! locks )
   {
-    Logger::get()->e( "failed to allocate locks: ",
-        strerror( errno ) );
+    Logger::get()->e( "failed to allocate locks: ", strerror( errno ) );
     exit( EXIT_FAILURE );
   }
 
