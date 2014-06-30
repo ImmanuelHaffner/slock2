@@ -14,8 +14,8 @@ void usage()
     "  -h  --help             - prints this message\n"
     "  -b  --bell             - sound signal on failed login\n"
     "  -v  --verbose          - make slock verbose\n"
-    "  -d  --debug            - produce debug messages\n"
-    "  -l  --logfile <FILE>   - sets the log file (default: " LOGFILE ")\n"
+    "      --debug            - produce debug messages\n"
+    "      --logfile <FILE>   - sets the log file (default: " LOGFILE ")\n"
     ;
   std::cout.flush();
 }
@@ -39,11 +39,11 @@ void parseArguments( char **argv )
       if ( Logger::LL_Verbose < logLevel )
         logLevel = Logger::LL_Verbose;
     }
-    else if ( streq( arg, "-d" ) || streq( arg, "--debug" ) )
+    else if ( streq( arg, "--debug" ) )
     {
       logLevel = Logger::LL_Debug;
     }
-    else if ( streq( arg, "-l" ) || streq( arg, "--logfile" ) )
+    else if ( streq( arg, "--logfile" ) )
     {
       logfile = *(++argv);
       if ( ! logfile )
@@ -56,6 +56,7 @@ void parseArguments( char **argv )
     {
       /* Unknown argument. */
       std::cerr << "unknown argument: '" << arg << "'" << std::endl;
+      usage();
       exit( EXIT_FAILURE );
     }
   }
