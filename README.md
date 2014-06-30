@@ -1,5 +1,5 @@
-slock - simple screen locker
-============================
+slock2 - Simple X Screen Locker
+===============================
 simple screen locker utility for X. 
 
 
