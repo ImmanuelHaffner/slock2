@@ -61,6 +61,7 @@ void parseArguments( char **argv )
         __DATE__ "\n"
         "Immanuel Haffner\n"
         ;
+      exit( EXIT_SUCCESS );
     }
     else
     {
