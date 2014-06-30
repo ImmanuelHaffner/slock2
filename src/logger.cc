@@ -1,6 +1,9 @@
 #include "logger.h"
 
 
+#include "util.h"
+
+
 /**
  * Creates a new Logger, that writes to the file specified by `filename`.  If
  * the file does not exist, writes to stdout.
@@ -10,25 +13,19 @@
  * @param logLevel the log level
  */
 void Logger::create( char const * filename,
-		LogLevel const logLevel /* = NORMAL */ )
+    LogLevel const logLevel /* = NORMAL */ )
 {
-	if ( Logger::instance )
-		delete Logger::instance;
+  if ( Logger::instance )
+    delete Logger::instance;
 
-	FILE *out = NULL;
-	if ( filename )
-		out = fopen( filename, "a" );
+  FILE *out = NULL;
 
-	if ( out )
-		Logger::instance = new Logger( filename, out, logLevel );
-	else
-	{
-		Logger::instance = new Logger( "<stdout>", stdout, logLevel );
+  if ( filename )
+    out = fopen( filename, "a" );
 
-		if ( filename )
-			Logger::instance->log( WARNING, "could not open '", filename,
-					"' for logging" );
-	}
+  Logger::instance = new Logger( filename, out ? out : stdout, logLevel );
+  if ( ! out && filename )
+    Logger::instance->w( "could not open '", filename, "' for logging" );
 }
 
 /**
@@ -36,18 +33,16 @@ void Logger::create( char const * filename,
  */
 void Logger::timestamp() const
 {
-	FILE *out = f ? f : stdout;
+  time_t thetime = time( NULL );
+  struct tm *date = localtime( &thetime );
 
-	time_t thetime = time( NULL );
-	struct tm *date = localtime( &thetime );
-
-	fprintf( out, "%d-%d-%d %d:%d:%d - ",
-			date->tm_year + 1900,		/* year */
-			date->tm_mon + 1,				/* month */
-			date->tm_mday,					/* day of the month */
-			date->tm_hour,					/* hour */
-			date->tm_min,						/* minutes */
-			date->tm_sec						/* seconds */ );
+  fprintf( f, "%d-%d-%d %d:%d:%d - ",
+      date->tm_year + 1900,   /* year */
+      date->tm_mon + 1,       /* month */
+      date->tm_mday,          /* day of the month */
+      date->tm_hour,          /* hour */
+      date->tm_min,           /* minutes */
+      date->tm_sec            /* seconds */ );
 }
 
 Logger *Logger::instance = NULL;

@@ -17,12 +17,13 @@ struct Logger
 {
   enum LogLevel
   {
-    DEBUG,
-    VERBOSE,
-    NORMAL,
-    WARNING,
-    ERROR
+    LL_Debug,
+    LL_Verbose, /* cause all logging to be mirrored to stdout */
+    LL_Normal,
+    LL_Warning,
+    LL_Error
   };
+
 
   /**
    * Creates a new Logger, that writes to the file specified by `filename`.  If
@@ -32,7 +33,8 @@ struct Logger
    * @param fileanme the name of the logfile
    * @param logLevel the log level
    */
-  static void create( char const * filename, LogLevel const logLevel = NORMAL );
+  static void create( char const * filename,
+      LogLevel const logLevel = LL_Normal );
 
   static inline Logger * get()
   {
@@ -42,8 +44,9 @@ struct Logger
   ~Logger()
   {
     if ( fclose( f ) )
-      std::cerr << "Warning: could not close '" << filename << "'";
+      std::cerr << "WARNING: could not close '" << filename << "'";
   }
+
 
   /**
    * Prints a timestamp to the log file.
@@ -54,10 +57,13 @@ struct Logger
    * Writes a list of messages to the log file and gives it a timestamp.
    */
   template < class... Args >
-    inline void log( Args... args ) const
-    {
-      log( NORMAL, args... );
-    }
+    inline void d( Args... args ) const { log( LL_Debug, args... ); }
+  template < class... Args >
+    inline void l( Args... args ) const { log( LL_Normal, args... ); }
+  template < class... Args >
+    inline void w( Args... args ) const { log( LL_Warning, args... ); }
+  template < class... Args >
+    inline void e( Args... args ) const { log( LL_Error, args... ); }
 
   /**
    * Writes a list of messages to the log file and gives it a timestamp.
@@ -65,31 +71,32 @@ struct Logger
   template < class... Args >
     void log( LogLevel const logLevel, Args... args ) const
     {
+      /* Ignore messages of too low log level. */
       if ( logLevel < this->logLevel )
         return;
 
       timestamp();
       switch ( logLevel )
       {
-        case ERROR:
-          fprintf( f, "ERROR: " );
+        case LL_Error:
+          _log( "ERROR: " );
           break;
 
-        case WARNING:
-          fprintf( f, "WARNING: " );
+        case LL_Warning:
+          _log( "WARNING: " );
           break;
 
-        case DEBUG:
-          fprintf( f, "DEBUG: " );
+        case LL_Debug:
+          _log( "DEBUG: " );
           break;
 
-        case VERBOSE:
-        case NORMAL:
         default:;
       }
       _log( args... );
-      fprintf( f, "\n" );
+
+      _log( "\n" );
     }
+
 
   private:
   static Logger *instance;
@@ -103,27 +110,35 @@ struct Logger
     : filename(filename), f(f), logLevel(logLevel)
   {}
 
+  template< class T >
+    void _log( T msg ) const
+    {
+      __log( f, msg );
+      if ( logLevel <= LL_Verbose && stdout != f )
+        __log( stdout, msg );
+    }
+
   /**
    * Writes a message to the log file.
    */
-  void _log( char * const msg ) const
+  void __log( FILE *out, char * const msg ) const
   {
-    _log( const_cast< char const * >( msg ) );
+    __log( out, const_cast< char const * >( msg ) );
   }
 
   /**
    * Writes a message to the log file.
    */
-  void _log( char const * const msg ) const
+  void __log( FILE *out, char const * const msg ) const
   {
     assert( msg && "message must not be NULL" );
-    fprintf( f, "%s", msg );
+    fprintf( out, "%s", msg );
   }
 
-  void _log( int i )            const { fprintf( f, "%d", i ); }
-  void _log( unsigned i )        const { fprintf( f, "%u", i ); }
-  void _log( long l )            const { fprintf( f, "%ld", l ); }
-  void _log( unsigned long l )  const { fprintf( f, "%lu", l ); }
+  void __log( FILE *out, int i )            const { fprintf( out, "%d", i ); }
+  void __log( FILE *out, unsigned u )       const { fprintf( out, "%u", u ); }
+  void __log( FILE *out, long l )           const { fprintf( out, "%ld", l ); }
+  void __log( FILE *out, unsigned long ul ) const { fprintf( out, "%lu", ul ); }
 
   /**
    * Writes a list of messages to the log file.
