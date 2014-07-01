@@ -8,7 +8,7 @@
 BUILDDIR		?= build
 CFG					?= default
 INSTALL			?= install
-NAME				?= slock
+NAME				?= slock2
 VERSION			?= 1.0
 SRCDIR			?= src
 DOCSDIR			?= doc

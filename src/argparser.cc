@@ -10,7 +10,7 @@
 void usage()
 {
   std::cout <<
-    "slock\n"
+    "slock2\n"
     "  -h  --help             - prints this message\n"
     "  -b  --bell             - sound signal on failed login\n"
     "  -v  --verbose          - make slock verbose\n"
