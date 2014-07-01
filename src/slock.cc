@@ -37,9 +37,9 @@
 
 
 /* Start parameters.  Might be altered by the argument parser. */
-Logger::LogLevel logLevel = Logger::LL_Normal;
-char const *logfile   = LOGFILE;
-bool enableBell       = false;
+Logger::LogLevel logLevel   = Logger::LL_Normal;
+char const *logfile         = NULL;
+bool enableBell             = false;
 
 
 #ifdef __linux__
@@ -103,8 +103,8 @@ static const char * getpw() /* only run as root */
   struct passwd *pw;
 
   errno = 0;
-  pw = getpwuid(getuid());
-  if (errno)
+  pw = getpwuid( getuid() );
+  if ( errno )
   {
     Logger::get()->e( "getpwuid ", strerror( errno ) );
     exit( EXIT_FAILURE );
@@ -120,9 +120,10 @@ static const char * getpw() /* only run as root */
   rval =  pw->pw_passwd;
 
 #if HAVE_SHADOW_H
-  if (rval[0] == 'x' && rval[1] == '\0') {
+  if ( rval[0] == 'x' && rval[1] == '\0' )
+  {
     struct spwd *sp;
-    sp = getspnam(getenv("USER"));
+    sp = getspnam( getenv("USER") );
     if ( ! sp )
     {
       Logger::get()->e(
@@ -134,15 +135,6 @@ static const char * getpw() /* only run as root */
     rval = sp->sp_pwdp;
   }
 #endif
-
-  /* drop privileges */
-  if ( geteuid() == 0 &&
-      ( (getegid() != pw->pw_gid && setgid(pw->pw_gid) < 0) ||
-        setuid(pw->pw_uid) < 0 ) )
-  {
-    Logger::get()->e( "cannot drop privileges" );
-    exit( EXIT_FAILURE );
-  }
 
   return rval;
 }
@@ -311,30 +303,81 @@ readpw( Display *display, Lock locks[], int nscreens, const char *pws )
 end:;
 }
 
+void dropPrivileges()
+{
+  if ( geteuid() == 0 &&
+      ( ( getegid() != getgid() && setgid( getgid() ) < 0 ) ||
+        seteuid( getuid() ) < 0 ) )
+  {
+    Logger::get()->e( "Cannot drop privileges" );
+    exit( EXIT_FAILURE );
+  }
+  else
+    Logger::get()->d( "Dropped privileges" );
+}
+
+void raisePrivileges()
+{
+  if ( seteuid( 0 ) || setegid( 0 ) )
+  {
+    Logger::get()->e( "Cannot raise privileges" );
+    exit( EXIT_FAILURE );
+  }
+  else
+    Logger::get()->d( "Raised privileges" );
+}
+
 
 int main( int, char **argv )
 {
   parseArguments( argv );
 
-  Logger::create( logfile, logLevel );
+  /* Create default logger. */
+  if ( ! Logger::create( LOGFILE, logLevel ) )
+    errx( EXIT_FAILURE, "setting up default logger failed\n" );
+
+  /* If a logfile was specified, try to create a new logger for it. */
+  if ( logfile )
+  {
+    dropPrivileges();
+    Logger *logger = Logger::create( logfile, logLevel );
+    raisePrivileges();
+
+    if ( ! logger )
+      Logger::get()->e( "Could not open '", logfile, "' for logging" );
+  }
+
   if ( atexit( Logger::destroy ) )
-    Logger::get()->w( "Could not register atexit( Logger::destroy() )" );
+    Logger::get()->d( "Could not register atexit( Logger::destroy() )" );
 
   Logger::get()->l( "Launched ", *argv );
+  Logger::get()->d( "UID  ", getuid() );
+  Logger::get()->d( "EUID ", geteuid() );
   raiseEvent( "start" );
 
 #ifdef __linux__
-  /* Disable the Out-of-memory killer for this process. */
+  /* Disable the Out-of-memory killer for this process.
+   * Needs root privileges.
+   */
   disableOOMKiller();
+  Logger::get()->d( "Out-of-memory killer disabled" );
 #endif
 
+  /* Get the password. */
+  char const * const passwd = getpw();
+  dropPrivileges();
+
+  Logger::get()->d( "UID  ", getuid() );
+  Logger::get()->d( "EUID ", geteuid() );
 
   /* Verify that the user has a password set. */
-  uid_t UID = getuid();
-  if ( ! getpwuid( UID ) )
   {
-    Logger::get()->e( "No password entry for UID ", UID );
-    exit( EXIT_FAILURE );
+    uid_t const UID = getuid();
+    if ( ! getpwuid( UID ) )
+    {
+      Logger::get()->e( "No password entry for UID ", UID );
+      exit( EXIT_FAILURE );
+    }
   }
 
   if ( XInitThreads() )
@@ -388,9 +431,9 @@ int main( int, char **argv )
   }
 
 #ifdef HAVE_BSD_AUTH
-  readpw( display, locks, nscreens )
+  readpw( display, locks, nscreens );
 #else
-    readpw( display, locks, nscreens, getpw() );
+  readpw( display, locks, nscreens, passwd );
 #endif
 
   for ( int i = 0; i < nscreens; ++i )

@@ -9,6 +9,11 @@
 #include "util.h"
 
 
+#ifndef LOGFILE
+#define LOGFILE "/var/log/slock2.log"
+#endif
+
+
 /**
  * A simple logger to write to a logfile.
  * If the logfile could not be opened for append, logs to stdout.
@@ -33,8 +38,10 @@ struct Logger
    * @param fileanme the name of the logfile
    * @param logLevel the log level
    */
-  static void create( char const * filename,
+  static Logger * create( char const * filename,
       LogLevel const logLevel = LL_Normal );
+
+  static Logger * create( LogLevel const logLevel = LL_Normal );
 
   static inline Logger * get()
   {
@@ -45,8 +52,8 @@ struct Logger
 
   ~Logger()
   {
-    if ( fclose( f ) )
-      std::cerr << "WARNING: could not close '" << filename << "'";
+    if ( stdout != f && fclose( f ) )
+      std::cerr << "WARNING: could not close '" << filename << "'" << std::endl;
   }
 
 
@@ -112,12 +119,26 @@ struct Logger
     : filename(filename), f(f), logLevel(logLevel)
   {}
 
+  /**
+   * Writes a list of messages to the log file.
+   */
+  template < class T, class... Args >
+    void _log( T t, Args... args ) const
+    {
+      _log( t );
+      _log( args... );
+    }
+
   template< class T >
     void _log( T msg ) const
     {
       __log( f, msg );
+      fflush( f );
       if ( logLevel <= LL_Verbose && stdout != f )
+      {
         __log( stdout, msg );
+        fflush( stdout );
+      }
     }
 
   /**
@@ -141,16 +162,6 @@ struct Logger
   void __log( FILE *out, unsigned u )       const { fprintf( out, "%u", u ); }
   void __log( FILE *out, long l )           const { fprintf( out, "%ld", l ); }
   void __log( FILE *out, unsigned long ul ) const { fprintf( out, "%lu", ul ); }
-
-  /**
-   * Writes a list of messages to the log file.
-   */
-  template < class T, class... Args >
-    void _log( T t, Args... args ) const
-    {
-      _log( t );
-      _log( args... );
-    }
 };
 
 

@@ -5,27 +5,39 @@
 
 
 /**
- * Creates a new Logger, that writes to the file specified by `filename`.  If
- * the file does not exist, writes to stdout.
+ * Creates a new Logger, that writes to the file specified by `filename`.
  * The log level describes what kind of levels to log.
+ *
+ * On success, replaces the current logger instance with the newly created
+ * logger.  Otherwise, returns NULL.
  *
  * @param fileanme the name of the logfile
  * @param logLevel the log level
+ * @return the newly created logger, or NULL on failure
  */
-void Logger::create( char const * filename,
+Logger * Logger::create( char const * filename,
     LogLevel const logLevel /* = NORMAL */ )
 {
-  if ( Logger::instance )
-    delete Logger::instance;
+  Logger *logger = NULL;
 
-  FILE *out = NULL;
+  if ( ! filename )
+    logger = new Logger( "<stdout>", stdout, logLevel );
+  else
+  {
+    FILE *out = fopen( filename, "a" );
+    if ( ! out )
+      return NULL;
+    logger = new Logger( filename, out, logLevel );
+  }
 
-  if ( filename )
-    out = fopen( filename, "a" );
+  delete Logger::instance;
+  Logger::instance = logger;
+  return Logger::instance;
+}
 
-  Logger::instance = new Logger( filename, out ? out : stdout, logLevel );
-  if ( ! out && filename )
-    Logger::instance->w( "could not open '", filename, "' for logging" );
+Logger * Logger::create( LogLevel const logLevel /* = NORMAL */ )
+{
+  return create( NULL, logLevel );
 }
 
 /**
@@ -43,6 +55,7 @@ void Logger::timestamp() const
       date->tm_hour,          /* hour */
       date->tm_min,           /* minutes */
       date->tm_sec            /* seconds */ );
+  fflush( f );
 }
 
 Logger *Logger::instance = NULL;
