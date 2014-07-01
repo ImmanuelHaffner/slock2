@@ -355,6 +355,10 @@ int main( int, char **argv )
   Logger::get()->d( "EUID ", geteuid() );
   raiseEvent( "start" );
 
+  if ( enableBell )
+    Logger::get()->l( "XBell enabled" );
+
+
 #ifdef __linux__
   /* Disable the Out-of-memory killer for this process.
    * Needs root privileges.
