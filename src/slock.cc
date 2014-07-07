@@ -346,6 +346,13 @@ bool suspend()
       return false;
 
     case 0: /* Child */
+      raisePrivileges();
+      if ( setuid( 0 ) )
+      {
+        Logger::get()->e( "Failed to set UID to 0 in suspend child process: ",
+            strerror( errno ) );
+        exit( EXIT_FAILURE );
+      }
       execl( "/usr/bin/pm-suspend", "pm-suspend" );
       Logger::get()->e( "Failed to execute pm-suspend: ", strerror( errno ) );
       exit( EXIT_FAILURE );
