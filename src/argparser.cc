@@ -13,6 +13,7 @@ void usage()
     "slock2\n"
     "  -h  --help             - prints this message\n"
     "  -b  --bell             - sound signal on failed login\n"
+    "  -s  --suspend          - suspend the machine after locking\n"
     "  -v  --verbose          - make slock verbose\n"
     "      --debug            - produce debug messages\n"
     "      --logfile <FILE>   - sets the log file (default: " LOGFILE ")\n"
@@ -34,6 +35,10 @@ void parseArguments( char **argv )
     else if ( streq( arg, "-b" ) || streq( arg, "--bell" ) )
     {
       enableBell = true;
+    }
+    else if ( streq( arg, "-s" ) || streq( arg, "--suspend" ) )
+    {
+      suspend = true;
     }
     else if ( streq( arg, "-v" ) || streq( arg, "--verbose" ) )
     {

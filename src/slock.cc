@@ -40,6 +40,7 @@
 Logger::LogLevel logLevel   = Logger::LL_Normal;
 char const *logfile         = NULL;
 bool enableBell             = false;
+bool suspend                = false;
 
 
 #ifdef __linux__
