@@ -14,7 +14,7 @@ void usage()
     "  -h  --help             - prints this message\n"
     "  -b  --bell             - sound signal on failed login\n"
     "  -s  --suspend          - suspend the machine after locking\n"
-    "  -v  --verbose          - make slock verbose\n"
+    "  -v  --verbose          - be verbose\n"
     "      --debug            - produce debug messages\n"
     "      --logfile <FILE>   - sets the log file (default: " LOGFILE ")\n"
     "      --version          - report the version\n"

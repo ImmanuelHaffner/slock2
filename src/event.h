@@ -3,7 +3,7 @@
 
 
 #ifndef EVENT_HANDLER
-#define EVENT_HANDLER "/usr/bin/slock-events.sh"
+#define EVENT_HANDLER "/usr/bin/slock2-events.sh"
 #endif
 
 

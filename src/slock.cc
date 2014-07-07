@@ -113,7 +113,7 @@ static const char * getpw() /* only run as root */
   else if ( ! pw )
   {
     Logger::get()->e(
-        "cannot retrieve password entry (make sure to suid or sgid slock)" );
+        "cannot retrieve password entry (make sure to suid or sgid slock2)" );
     exit( EXIT_FAILURE );
   }
 
@@ -128,7 +128,7 @@ static const char * getpw() /* only run as root */
     if ( ! sp )
     {
       Logger::get()->e(
-          "cannot retrieve shadow entry (make sure to suid or sgid slock)" );
+          "cannot retrieve shadow entry (make sure to suid or sgid slock2)" );
       exit( EXIT_FAILURE );
     }
 
