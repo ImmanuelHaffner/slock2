@@ -21,6 +21,7 @@
 
 #include <unistd.h>     // write(), getuid()
 #include <pwd.h>        // getpwuid()
+#include <sys/wait.h>   // wait(), waitpid()
 #include <X11/Xlib.h>   // XOpenDisplay()
 #include <X11/keysym.h>
 #include <X11/Xutil.h>
@@ -40,7 +41,7 @@
 Logger::LogLevel logLevel   = Logger::LL_Normal;
 char const *logfile         = NULL;
 bool enableBell             = false;
-bool suspend                = false;
+bool doSuspend              = false;
 
 
 #ifdef __linux__
@@ -328,6 +329,37 @@ void raisePrivileges()
     Logger::get()->d( "Raised privileges" );
 }
 
+/**
+ * Suspends the computer.
+ *
+ * @return true if suspend succeeded, false otherwise
+ */
+bool suspend()
+{
+  Logger::get()->l( "Suspending" );
+
+  if ( 0 == fork() ) /* Child */
+  {
+    execl( "/usr/bin/pm-suspend", "pm-suspend" );
+    return false;
+  }
+  else
+  {
+    int status;
+    wait( &status );
+    if ( WIFEXITED( status ) && WEXITSTATUS( status ) == 0 )
+    {
+      Logger::get()->l( "Woke up from suspend" );
+      return true;
+    }
+    else
+    {
+      Logger::get()->e( "Failed to suspend" );
+      return false;
+    }
+  }
+}
+
 
 int main( int, char **argv )
 {
@@ -440,6 +472,11 @@ int main( int, char **argv )
     exit( EXIT_FAILURE );
   }
 
+  /* Suspend the computer, if possible. */
+  if ( doSuspend )
+    suspend();
+
+  /* Read the password to unlock the computer. */
 #ifdef HAVE_BSD_AUTH
   readpw( display, locks, nscreens );
 #else

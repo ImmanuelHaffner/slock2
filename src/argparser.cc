@@ -38,7 +38,7 @@ void parseArguments( char **argv )
     }
     else if ( streq( arg, "-s" ) || streq( arg, "--suspend" ) )
     {
-      suspend = true;
+      doSuspend = true;
     }
     else if ( streq( arg, "-v" ) || streq( arg, "--verbose" ) )
     {

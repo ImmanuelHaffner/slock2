@@ -8,7 +8,7 @@
 extern Logger::LogLevel logLevel;
 extern char const *logfile;
 extern bool enableBell;
-extern bool suspend;
+extern bool doSuspend;
 
 void parseArguments( char **argv );
 
