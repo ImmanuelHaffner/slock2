@@ -333,9 +333,14 @@ int main( int, char **argv )
 {
   parseArguments( argv );
 
+  /* Verify privileges. */
+  if ( 0 != geteuid() )
+    errx( EXIT_FAILURE, "needs root privileges, make sure to run as root or"
+        " SetUID" );
+
   /* Create default logger. */
   if ( ! Logger::create( LOGFILE, logLevel ) )
-    errx( EXIT_FAILURE, "setting up default logger failed\n" );
+    errx( EXIT_FAILURE, "setting up default logger failed" );
 
   /* If a logfile was specified, try to create a new logger for it. */
   if ( logfile )
