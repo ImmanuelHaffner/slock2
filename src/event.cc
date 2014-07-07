@@ -30,15 +30,25 @@ void raiseEvent( char const * const name )
   }
   fclose( check );
 
-  if ( 0 == fork() ) /* Child. */
+  pid_t child_pid = fork();
+  switch ( child_pid )
   {
-    execl(
-        "/usr/bin/bash",  /* path */
-        "bash",           /* 1st argument: program name */
-        EVENT_HANDLER,    /* 2nd argument: shell script path */
-        name              /* 3rd argument: argument to the shell script */
-        );
+    case -1:
+      Logger::get()->w( "Failed to fork child process for event-handler" );
+      break;
 
-    Logger::get()->e( strerror( errno ) );
+    case 0:
+      execl(
+          "/usr/bin/bash",  /* path */
+          "bash",           /* 1st argument: program name */
+          EVENT_HANDLER,    /* 2nd argument: shell script path */
+          name              /* 3rd argument: argument to the shell script */
+          );
+
+      Logger::get()->e( "Failed to execute event-handler: ",
+          strerror( errno ) );
+      break;
+
+    default:;
   }
 }

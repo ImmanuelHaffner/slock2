@@ -338,25 +338,33 @@ bool suspend()
 {
   Logger::get()->l( "Suspending" );
 
-  if ( 0 == fork() ) /* Child */
+  pid_t child_pid = fork();
+  switch ( child_pid )
   {
-    execl( "/usr/bin/pm-suspend", "pm-suspend" );
-    return false;
-  }
-  else
-  {
-    int status;
-    wait( &status );
-    if ( WIFEXITED( status ) && WEXITSTATUS( status ) == 0 )
-    {
-      Logger::get()->l( "Woke up from suspend" );
-      return true;
-    }
-    else
-    {
-      Logger::get()->e( "Failed to suspend" );
+    case -1:
+      Logger::get()->w( "Failed to fork child process for suspend" );
       return false;
-    }
+
+    case 0: /* Child */
+      execl( "/usr/bin/pm-suspend", "pm-suspend" );
+      Logger::get()->e( "Failed to execute pm-suspend: ", strerror( errno ) );
+      exit( EXIT_FAILURE );
+
+    default: /* Parent */
+      {
+        int status;
+        if ( waitpid( child_pid, &status, 0 ) == child_pid &&
+            WIFEXITED( status ) && WEXITSTATUS( status ) == EXIT_SUCCESS )
+        {
+          Logger::get()->l( "Woke up from suspend" );
+          return true;
+        }
+        else
+        {
+          Logger::get()->e( "Failed to suspend" );
+          return false;
+        }
+      }
   }
 }
 
