@@ -12,7 +12,8 @@ Features
 * enable/disable XBell
 * event-handling with a shell script
 * let **slock2** suspend your computer
-* TODO: udev
+* TODO: udev events
+* TODO: pam support
 
 
 #### Logger
