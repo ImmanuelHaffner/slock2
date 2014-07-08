@@ -9,7 +9,9 @@ Features
 * more transparent and better documented code
 * a simple but powerful logger
 * some command-line arguments
+* enable/disable XBell
 * event-handling with a shell script
+* let **slock2** suspend your computer
 * TODO: udev
 
 
@@ -26,14 +28,15 @@ and `DEBUG`.  In `VERBOSE`-mode the logger mirrors all log output to `stdout`.
 **slock2** provides some command-line arguments to modify it's behaviour:
 
 
-| Short | Long              | Usage                                                                |
-|-------|-------------------|----------------------------------------------------------------------|
-| -h    | --help            | Prints a help message.                                               |
-| -b    | --bell            | Rings the XBell on failed login attempt.                             |
-| -v    | --verbose         | Sets the log level to `VERBOSE`.                                     |
-|       | --debug           | Sets the log level to `DEBUG`.                                       |
-|       | --logfile <FILE>  | Sets the used log file (by default `/var/log/slock.log`).            |
-|       | --version         | Prints the version, the release date, and the author.                |
+| Short | Long              | Usage                                            |
+|-------|-------------------|--------------------------------------------------|
+| -h    | --help            | prints this message                              |
+| -b    | --bell            | sound signal on failed login                     |
+| -s    | --suspend         | suspend the machine after locking                |
+| -v    | --verbose         | be verbose                                       |
+|       | --debug           | produce debug messages                           |
+|       | --logfile <FILE>  | sets the log file (default `/var/log/slock.log`) |
+|       | --version         | report the version                               |
 
 
 Requirements
@@ -79,11 +82,20 @@ of **slock2**, and set the *SetUID* bit.
 (This is already done by `make install`.)
 
 
-Running slock
--------------
+Running slock2
+--------------
 
 To run **slock2**, enter the command
 
     $ slock2
 
 and to get out of it, enter your password.
+
+
+Optional dependences
+--------------------
+
+#### pm-utils
+
+To let **slock2** suspend your computer after locking, pm-utils must be
+installed, i.e. the file `/usr/bin/pm-suspend` must exist and be executable.
