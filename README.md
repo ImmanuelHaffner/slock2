@@ -96,7 +96,7 @@ and to get out of it, enter your password.
 Optional dependences
 --------------------
 
-#### pm-utils
+#### systemd
 
-To let **slock2** suspend your computer after locking, pm-utils must be
-installed, i.e. the file `/usr/bin/pm-suspend` must exist and be executable.
+To let **slock2** suspend your computer after locking, **systemd** must be
+installed, and the target *suspend* must exist.
