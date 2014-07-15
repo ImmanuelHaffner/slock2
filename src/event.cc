@@ -42,7 +42,8 @@ void raiseEvent( char const * const name )
           "/usr/bin/bash",  /* path */
           "bash",           /* 1st argument: program name */
           EVENT_HANDLER,    /* 2nd argument: shell script path */
-          name              /* 3rd argument: argument to the shell script */
+          name,             /* 3rd argument: argument to the shell script */
+          (char *) NULL
           );
 
       Logger::get()->e( "Failed to execute event-handler: ",
