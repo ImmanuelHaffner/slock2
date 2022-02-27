@@ -475,7 +475,7 @@ int main( int, char **argv )
 
   if ( ! nlocks )
   {
-    delete locks;
+    delete[] locks;
     XCloseDisplay( display );
     Logger::get()->e( "No locks have been acquired" );
     exit( EXIT_FAILURE );
@@ -497,7 +497,7 @@ int main( int, char **argv )
       unlock( display, &locks[ i ] );   // deletes the lock
   Logger::get()->d( "all screens have been unlocked" );
 
-  delete locks;
+  delete[] locks;
   XCloseDisplay( display );
 
   Logger::get()->l( "Exiting.\n---------------------------------------------" );
